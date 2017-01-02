@@ -6,16 +6,38 @@ extern crate env_logger;
 extern crate hull;
 
 
+fn abort(exit_code :i32, message :String) -> ! {
+    match hull::cmd::stderr_write(message) {
+        Ok(_) => exit(exit_code),
+        Err(e) => unexpected_io_error(e),
+    };
+}
+
+
+fn unexpected_io_error(err :std::io::Error) -> ! {
+    println!("failure: {}", err.to_string());
+    exit(1);
+}
+
+
 fn main() {
     let now = Instant::now();
-    env_logger::init().unwrap();
+    env_logger::init().unwrap_or_else(|err| {
+        abort(1, format!("Error: {}", err));
+    });
+
     let args: Vec<String> = env::args().collect();
 
     let ref cmd = args[0];
     let cmd_args = &args[1 .. args.len()];
 
     // remove binary path from PATH so the shell can resolve the next command location
-    let binary_path = env::current_exe().unwrap();
+    let binary_path = match env::current_exe() {
+        Ok(res) => res,
+        Err(e) => {
+            abort(1, format!("Error: unable to get executable path\n{}", e));
+        },
+    };
 
     let binary_dir = String::from(
         binary_path.parent().unwrap()
@@ -24,22 +46,35 @@ fn main() {
     );
 
     // current shell invocation path
-    let cur_dir = env::current_dir().unwrap();
+    let cur_dir = match env::current_dir() {
+        Ok(res) => res,
+        Err(e) => abort(1, format!("Error: cannot get current directory\n{}", e)),
+    };
     let cur_path = cur_dir.as_path();
 
-    if hull::cmd::paths_equivalent(binary_path, cmd.clone(), cur_path) {
-        hull::cmd::stderr_write(String::from("Error: Unwilling to run program recursively.")
-                                + "Please check your paths."
-        ).unwrap();
-        exit(1);
-    }
+    match hull::cmd::paths_equivalent(binary_path, cmd.clone(), cur_path) {
+        Ok(equivalent) => {
+            if equivalent {
+                abort(1,
+                      String::from("Error: unwilling to run program recursively. ")
+                      + "Please check your paths",
+                );
+            };
+        },
+        Err(e) => abort(1, format!("Error: cannot open paths\n{}", e.to_string())),
+    };
 
     debug!("command: '{}' args: '{:#?}'", cmd, cmd_args);
 
-    let path_str = env::var("PATH").unwrap();
+    let path_str = match env::var("PATH") {
+        Ok(res) => res,
+        Err(e) => abort(1, format!("Error: cannot get PATH environment variable\n{}", e)),
+    };
+
     let new_path_str = hull::cmd::remove_dir_from_path(binary_dir, path_str);
 
     let boot_duration = now.elapsed();
+    let run_start = Instant::now();
 
     let result = Command::new(cmd)
         .args(cmd_args)
@@ -47,26 +82,31 @@ fn main() {
         .current_dir(cur_path)
         .status();
 
-    if result.is_ok() {
-        let status = result.unwrap();
+    let run_duration = run_start.elapsed();
 
-        if !status.success() {
-            let code = status.code();
-            match code {
-                Some(status_code) => exit(status_code),
-                None => exit(1),
+    let status_code = match result {
+        // exit for all statuses except expected ones
+
+        Ok(status) => {
+            match status.code() {
+                Some(status_code) => status_code,
+                None => abort(1, format!("{} : unknown error running command", cmd)),
             }
+        },
+        Err(e) => {
+            match e.raw_os_error() {
+                Some(error_code) => abort(error_code, format!("{} : {}", cmd, e.to_string())),
+                None => abort(1, format!("{} : unknown error running command", cmd)),
+            };
         }
-    } else {
-        let err = result.unwrap_err();
-        let error_code = err.raw_os_error().unwrap();
-        hull::cmd::stderr_write(format!("{} : {}", cmd, err.to_string())).unwrap();
-        exit(error_code);
-    }
+    };
 
     let total_duration = now.elapsed();
 
     let boot_time = hull::cmd::duration_in_millis(boot_duration);
+    let run_time = hull::cmd::duration_in_millis(run_duration);
     let total_time = hull::cmd::duration_in_millis(total_duration);
-    info!("boot_time: {} ms total_time: {} ms", boot_time, total_time);
+    info!("boot_time: {} ms run_time:{ } ms total_time: {} ms", boot_time, run_time, total_time);
+
+    exit(status_code);
 }
