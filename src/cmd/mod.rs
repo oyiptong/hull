@@ -1,7 +1,15 @@
+extern crate time;
+extern crate serde;
+extern crate serde_json;
+
 use std;
 use std::time::Duration;
 use std::path::{Path, PathBuf};
 use std::io::{self, Write};
+use std::process::exit;
+use std::net::UdpSocket;
+
+include!(concat!(env!("OUT_DIR"), "/serde_types.rs"));
 
 pub fn stderr_write(message :String) -> io::Result<()> {
     let stderr = std::io::stderr();
@@ -11,6 +19,38 @@ pub fn stderr_write(message :String) -> io::Result<()> {
     try!(handle.write(b"\n"));
     Ok(())
 }
+
+
+pub fn update_telemetry<T>(value: &T) -> Result<(), io::Error>
+    where T: serde::Serialize,
+{
+    let serialized = serde_json::to_string(value).unwrap();
+    let payload = serialized.as_bytes();
+    let socket = try!(UdpSocket::bind("127.0.0.1:0"));
+    try!(socket.send_to(&payload, "127.0.0.1:48656"));
+    Ok(())
+}
+
+
+pub fn abort(exit_code :i32, message :String) -> ! {
+    update_telemetry(&Event {
+        event_name: "hull_fatal_error".to_string(),
+        event_data: CurrentTime {
+            created_at: time::get_time().sec
+        }
+    }).ok();
+    match stderr_write(message) {
+        Ok(_) => exit(exit_code),
+        Err(e) => unexpected_io_error(e),
+    };
+}
+
+
+pub fn unexpected_io_error(err :std::io::Error) -> ! {
+    println!("failure: {}", err.to_string());
+    exit(1);
+}
+
 
 /// Returns a shell PATH environment string minus a given directory
 pub fn remove_dir_from_path(dir :String, path_str :String) -> String{

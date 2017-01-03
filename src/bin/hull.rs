@@ -1,23 +1,22 @@
+#[macro_use]
+extern crate log;
+extern crate env_logger;
+extern crate time;
+extern crate hull;
+
 use std::env;
 use std::time::Instant;
 use std::process::{exit, Command};
-#[macro_use] extern crate log;
-extern crate env_logger;
-extern crate hull;
+use time::get_time;
+use hull::cmd::{
+    abort,
+    update_telemetry,
+    paths_equivalent,
+    remove_dir_from_path,
+    duration_in_millis
+};
 
-
-fn abort(exit_code :i32, message :String) -> ! {
-    match hull::cmd::stderr_write(message) {
-        Ok(_) => exit(exit_code),
-        Err(e) => unexpected_io_error(e),
-    };
-}
-
-
-fn unexpected_io_error(err :std::io::Error) -> ! {
-    println!("failure: {}", err.to_string());
-    exit(1);
-}
+include!(concat!(env!("OUT_DIR"), "/serde_types.rs"));
 
 
 fn main() {
@@ -52,7 +51,7 @@ fn main() {
     };
     let cur_path = cur_dir.as_path();
 
-    match hull::cmd::paths_equivalent(binary_path, cmd.clone(), cur_path) {
+    match paths_equivalent(binary_path, cmd.clone(), cur_path) {
         Ok(equivalent) => {
             if equivalent {
                 abort(1,
@@ -71,7 +70,7 @@ fn main() {
         Err(e) => abort(1, format!("Error: cannot get PATH environment variable\n{}", e)),
     };
 
-    let new_path_str = hull::cmd::remove_dir_from_path(binary_dir, path_str);
+    let new_path_str = remove_dir_from_path(binary_dir, path_str);
 
     let boot_duration = now.elapsed();
     let run_start = Instant::now();
@@ -103,10 +102,27 @@ fn main() {
 
     let total_duration = now.elapsed();
 
-    let boot_time = hull::cmd::duration_in_millis(boot_duration);
-    let run_time = hull::cmd::duration_in_millis(run_duration);
-    let total_time = hull::cmd::duration_in_millis(total_duration);
-    info!("boot_time: {} ms run_time:{ } ms total_time: {} ms", boot_time, run_time, total_time);
+    let boot_time = duration_in_millis(boot_duration);
+    let run_time = duration_in_millis(run_duration);
+
+    let telemetry_start = Instant::now();
+    update_telemetry(&Event {
+        event_name: "hull_timings".to_string(),
+        event_data: PerfTimings {
+            cmd: cmd.to_string(),
+            boot: boot_time,
+            run: run_time,
+            created_at: get_time().sec,
+        }
+    }).ok();
+
+    let telemetry_duration = telemetry_start.elapsed();
+    let telemetry_time = duration_in_millis(telemetry_duration);
+
+    let total_time = duration_in_millis(total_duration);
+
+    info!("cmd: {} boot: {} ms run:{} ms telemetry: {} ms total: {} ms",
+          cmd, boot_time, run_time, telemetry_time, total_time);
 
     exit(status_code);
 }
