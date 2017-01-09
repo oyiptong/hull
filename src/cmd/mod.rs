@@ -3,6 +3,7 @@ extern crate serde;
 extern crate serde_json;
 
 use std;
+use std::error::Error;
 use std::time::Duration;
 use std::path::{Path, PathBuf};
 use std::io::{self, Write};
@@ -47,8 +48,11 @@ pub fn abort(exit_code :i32, message :String) -> ! {
 
 
 pub fn unexpected_io_error(err :std::io::Error) -> ! {
-    println!("failure: {}", err.to_string());
-    exit(1);
+    println!("failure: {}", err.description().to_string());
+    match err.raw_os_error() {
+        Some(code) => exit(code),
+        None => exit(1),
+    }
 }
 
 
