@@ -10,6 +10,7 @@ use std::process::{exit, Command};
 use time::get_time;
 use hull::cmd::{
     abort,
+    get_hull_home,
     update_telemetry,
     paths_equivalent,
     remove_dir_from_path,
@@ -30,18 +31,9 @@ fn main() {
     let ref cmd = args[0];
     let cmd_args = &args[1 .. args.len()];
 
-    // remove binary path from PATH so the shell can resolve the next command location
-    let binary_path = match env::current_exe() {
-        Ok(res) => res,
-        Err(e) => {
-            abort(1, format!("Error: unable to get executable path\n{}", e));
-        },
-    };
-
+    let binary_path = get_hull_home();
     let binary_dir = String::from(
-        binary_path.parent().unwrap()
-            .to_string_lossy()
-            .into_owned()
+        binary_path.to_string_lossy()
     );
 
     // current shell invocation path
@@ -70,6 +62,7 @@ fn main() {
         Err(e) => abort(1, format!("Error: cannot get PATH environment variable\n{}", e)),
     };
 
+    // remove binary path from PATH so the shell can resolve the next command location
     let new_path_str = remove_dir_from_path(binary_dir, path_str);
 
     let boot_duration = now.elapsed();

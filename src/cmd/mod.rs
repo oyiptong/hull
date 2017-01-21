@@ -2,7 +2,7 @@ extern crate time;
 extern crate serde;
 extern crate serde_json;
 
-use std;
+use std::{self, env};
 use std::error::Error;
 use std::time::Duration;
 use std::path::{Path, PathBuf};
@@ -55,9 +55,37 @@ pub fn unexpected_io_error(err :std::io::Error) -> ! {
     }
 }
 
+pub fn get_hull_home() -> PathBuf {
+    let mut path = None;
+
+    match env::var("HULL_HOME") {
+        Ok(res) => {
+            path = Some(PathBuf::from(res));
+        },
+        Err(_) => {
+            if cfg!(target_os = "mac_os") {
+                // the expectation of how current_exe works is only valid for OS X
+                match env::current_exe() {
+                    Ok(res) => {
+                        match res.parent() {
+                            Some(r) => {
+                                path = Some(r.to_path_buf());
+                            },
+                            None => (),
+                        };
+                    },
+                    Err(_) => (),
+                };
+            }
+        }
+    };
+
+    return path.unwrap_or(PathBuf::from("/etc/hull"));
+}
+
 
 /// Returns a shell PATH environment string minus a given directory
-pub fn remove_dir_from_path(dir :String, path_str :String) -> String{
+pub fn remove_dir_from_path(dir :String, path_str :String) -> String {
     let mut child_paths = Vec::new(); 
     for path in path_str.split(":") {
         if path != dir {
