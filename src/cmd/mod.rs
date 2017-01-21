@@ -184,9 +184,9 @@ mod tests {
                 let cur_cmd = String::from(input[1]);
                 let cur_path = tmp_dir.path().join(input[2]);
                 let expected = input[3];
-                
+
                 let cmd_path = cur_path.join(cur_cmd.clone());
-                
+
                 ensure_files_created(
                     tmp_dir.path().to_path_buf(),
                     [
@@ -194,12 +194,12 @@ mod tests {
                         cmd_path,
                     ].as_ref()
                 );
-                
+
                 let expectation = match expected {
                     "t" => true,
                     _ => false,
                 };
-                
+
                 let observed = paths_equivalent(binary_path, cur_cmd, cur_path.as_path()).unwrap();
                 assert_eq!(observed, expectation)
             });
