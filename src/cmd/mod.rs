@@ -62,22 +62,7 @@ pub fn get_hull_home() -> PathBuf {
         Ok(res) => {
             path = Some(PathBuf::from(res));
         },
-        Err(_) => {
-            if cfg!(target_os = "mac_os") {
-                // the expectation of how current_exe works is only valid for OS X
-                match env::current_exe() {
-                    Ok(res) => {
-                        match res.parent() {
-                            Some(r) => {
-                                path = Some(r.to_path_buf());
-                            },
-                            None => (),
-                        };
-                    },
-                    Err(_) => (),
-                };
-            }
-        }
+        Err(_) => (),
     };
 
     return path.unwrap_or(PathBuf::from("/etc/hull"));
