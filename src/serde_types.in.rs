@@ -7,7 +7,6 @@ struct Event<T> {
 #[derive(Serialize, Deserialize, Debug)]
 struct PerfTimings {
     cmd: String,
-    boot: f64,
     run: f64,
     created_at: i64,
 }

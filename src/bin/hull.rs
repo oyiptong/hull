@@ -65,7 +65,6 @@ fn main() {
     // remove binary path from PATH so the shell can resolve the next command location
     let new_path_str = remove_dir_from_path(binary_dir, path_str);
 
-    let boot_duration = now.elapsed();
     let run_start = Instant::now();
 
     let result = Command::new(cmd)
@@ -94,8 +93,6 @@ fn main() {
     };
 
     let total_duration = now.elapsed();
-
-    let boot_time = duration_in_millis(boot_duration);
     let run_time = duration_in_millis(run_duration);
 
     let telemetry_start = Instant::now();
@@ -103,7 +100,6 @@ fn main() {
         event_name: "hull_timings".to_string(),
         event_data: PerfTimings {
             cmd: cmd.to_string(),
-            boot: boot_time,
             run: run_time,
             created_at: get_time().sec,
         }
@@ -114,8 +110,8 @@ fn main() {
 
     let total_time = duration_in_millis(total_duration);
 
-    info!("cmd: {} boot: {} ms run:{} ms telemetry: {} ms total: {} ms",
-          cmd, boot_time, run_time, telemetry_time, total_time);
+    info!("cmd: {} run:{} ms telemetry: {} ms total: {} ms",
+          cmd, run_time, telemetry_time, total_time);
 
     exit(status_code);
 }
