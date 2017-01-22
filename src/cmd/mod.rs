@@ -55,10 +55,14 @@ pub fn unexpected_io_error(err :std::io::Error) -> ! {
     }
 }
 
-pub fn get_hull_home() -> PathBuf {
+/// Returns possible locations for the hull symlinks directory
+///
+/// 1. The `HULL_ROOT` environment variable is attempted first
+/// 2. If that fails `/etc/hull` is returned
+pub fn get_hull_symlinks_root() -> PathBuf {
     let mut path = None;
 
-    match env::var("HULL_HOME") {
+    match env::var("HULL_ROOT") {
         Ok(res) => {
             path = Some(PathBuf::from(res));
         },

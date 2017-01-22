@@ -10,7 +10,7 @@ use std::process::{exit, Command};
 use time::get_time;
 use hull::cmd::{
     abort,
-    get_hull_home,
+    get_hull_symlinks_root,
     update_telemetry,
     paths_equivalent,
     remove_dir_from_path,
@@ -31,9 +31,13 @@ fn main() {
     let ref cmd = args[0];
     let cmd_args = &args[1 .. args.len()];
 
-    let binary_path = get_hull_home();
-    let binary_dir = String::from(
-        binary_path.to_string_lossy()
+    let symlinks_path = get_hull_symlinks_root();
+    if !symlinks_path.exists() {
+        abort(-1, String::from("Error: cannot find hull symlinks directory. Please set HULL_ROOT"));
+    }
+
+    let symlinks_dir = String::from(
+        symlinks_path.to_string_lossy().as_ref()
     );
 
     // current shell invocation path
@@ -43,7 +47,7 @@ fn main() {
     };
     let cur_path = cur_dir.as_path();
 
-    match paths_equivalent(binary_path, cmd.clone(), cur_path) {
+    match paths_equivalent(symlinks_path, cmd.clone(), cur_path) {
         Ok(equivalent) => {
             if equivalent {
                 abort(1,
@@ -62,8 +66,8 @@ fn main() {
         Err(e) => abort(1, format!("Error: cannot get PATH environment variable\n{}", e)),
     };
 
-    // remove binary path from PATH so the shell can resolve the next command location
-    let new_path_str = remove_dir_from_path(binary_dir, path_str);
+    // remove symlinks path from PATH so the shell can resolve the next command location
+    let new_path_str = remove_dir_from_path(symlinks_dir, path_str);
 
     let run_start = Instant::now();
 
