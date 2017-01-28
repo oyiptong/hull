@@ -5,7 +5,7 @@ struct Event<T> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct PerfTimings {
+struct CommandRunTime {
     cmd: String,
     args: Vec<String>,
     run: f64,

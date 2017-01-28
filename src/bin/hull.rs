@@ -101,8 +101,8 @@ fn main() {
 
     let telemetry_start = Instant::now();
     update_telemetry(&Event {
-        event_name: "hull_timings".to_string(),
-        event_data: PerfTimings {
+        event_name: "hull_timing".to_string(),
+        event_data: CommandRunTime {
             cmd: cmd.to_string(),
             args: cmd_args.to_vec(),
             run: run_time,
