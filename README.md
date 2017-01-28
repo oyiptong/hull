@@ -1,4 +1,4 @@
-# hull: a tool to measure command performance
+# hull: A tool to measure command performance
 
 What `hull` aims to achieve is the performance measurement of shell commands. It does so by measuring
 the time elapsed between invocation and termination of a program invoked, and emits the measurements
@@ -16,7 +16,7 @@ for `hull` is `transponder`: https://github.com/oyiptong/transponder
 
 By default `hull` emits to `127.0.0.1:48656`.
 
-## usage
+## Usage
 
 `hull` is not invoked directly. It relies on path interception to function. Essentially, it figures
 out the name of the program to run by looking at its filename and removes itself from the path and
@@ -27,7 +27,7 @@ To function, `hull` requires two things:
 1. command whitelist
 2. path interception
 
-### command whitelist
+### Command whitelist
 
 To use `hull`, create symlinks in its `HULL_ROOT` directory. By default, this is `/etc/hull`.
 You can define a custom root directory by setting the `HULL_ROOT` environment variable.
@@ -37,12 +37,12 @@ mechanism.
 
 You simply need to create symlinks in the name of the program and place them in this directory.
 
-### path interception
+### Path interception
 
 For `hull` to get invoked, the `PATH` environment variable needs to include the `HULL_ROOT` before
 any other `PATH` value. One would set it as the last thing in `.bashrc`, `.zshrc`, `.profile`, etc.
 
-## payload schema
+## Payload Schema
 
 The data returned is serialized in `JSON`. While binary serialization would've been faster and more
 compact, the performance gains aren't big enough in the grand scheme of things.
@@ -87,7 +87,7 @@ In the case of the `hull_timing` event, `hull` will emit an `Event` with the fol
 This `Event` is only to inform that there was something incorrect in `hull`'s execution. It only
 contains the timestamp of the invocation.
 
-## example setup
+## Example Setup
 
 In another shell, one needs to run a receiver for the datagrams listening on `127.0.0.1:48656`.
 
