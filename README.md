@@ -14,7 +14,7 @@ In order to run fast, `hull` emits its data collection over UDP.
 It sends a `JSON` encoded payload over UDP for a listener to persist or relay. A good companion
 for `hull` is `transponder`: https://github.com/oyiptong/transponder
 
-By default `hull` emits to `127.0.0.1:48656`.
+By default `hull` emits to `127.0.0.1:48656`. It runs on Mac OS and Linux.
 
 ## Usage
 
