@@ -42,6 +42,32 @@ You simply need to create symlinks in the name of the program and place them in 
 For `hull` to get invoked, the `PATH` environment variable needs to include the `HULL_ROOT` before
 any other `PATH` value. One would set it as the last thing in `.bashrc`, `.zshrc`, `.profile`, etc.
 
+## Performance
+
+Because we expect stats to be sent every time a user executes a shell command, performance is key.
+The goal is to have the monitoring take strictly less than 10ms overall.
+
+This has been benchmarked on an 8-core AWS machine (Intel(R) Xeon(R) CPU E5-2680 v2 @ 2.80GHz)
+in two situations:
+
+1. command wrapped with hull
+2. command unwrapped (nowrap)
+
+The shell command used looked like:
+
+```
+for i in {1..5000}; do (time ls) 2>> wrapped.log 1>/dev/null; done
+```
+
+The results are as follows:
+
+|   status    |   mean    | median |
+| ----------- | --------  | ------ |
+| nowrap.log  | 0.0031828 |  0.003 |
+| wrapped.log | 0.0063196 |  0.006 |
+
+This means that over 5k runs of ls in the same directory, with the only difference between the 2 different kinds of runs was the use of hull, there was a ~3 ms difference in both mean or median.
+
 ## Payload Schema
 
 The data returned is serialized in `JSON`. While binary serialization would've been faster and more
