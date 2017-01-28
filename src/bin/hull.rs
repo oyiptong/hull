@@ -104,8 +104,10 @@ fn main() {
         event_name: "hull_timings".to_string(),
         event_data: PerfTimings {
             cmd: cmd.to_string(),
+            args: cmd_args.to_vec(),
             run: run_time,
             created_at: get_time().sec,
+            status_code: status_code,
         }
     }).ok();
 

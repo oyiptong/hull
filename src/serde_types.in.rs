@@ -7,8 +7,10 @@ struct Event<T> {
 #[derive(Serialize, Deserialize, Debug)]
 struct PerfTimings {
     cmd: String,
+    args: Vec<String>,
     run: f64,
     created_at: i64,
+    status_code: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
