@@ -169,3 +169,22 @@ Should one have a server listening, they would receive this data packet (albeit 
              'event_name': 'hull_timing'}]}
 ```
 
+## Build instructions
+
+Requirements are:
+* Mac OS or Linux (BSD's may be supported, but are untested)
+* Rust 1.13.0 or 1.14.0
+
+`rustup` is recommended for compiler management.
+
+To install dependencies and build with compiler optimizations, simply run:
+
+```
+$ cargo build --release
+```
+
+The statically compiled binary will be found at:
+
+```
+./target/release/hull
+```
