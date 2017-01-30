@@ -34,11 +34,15 @@ pub fn update_telemetry<T>(value: &T) -> Result<(), io::Error>
 
 
 pub fn abort(exit_code :i32, message :String) -> ! {
-    update_telemetry(&Event {
-        event_name: "hull_fatal_error".to_string(),
-        event_data: CurrentTime {
-            created_at: time::get_time().sec
-        }
+    update_telemetry(&EventsPayload {
+        events: vec!(
+            Event {
+                event_name: "hull_fatal_error".to_string(),
+                event_data: CurrentTime {
+                    created_at: time::get_time().sec
+                }
+            }
+        ),
     }).ok();
     match stderr_write(message) {
         Ok(_) => exit(exit_code),

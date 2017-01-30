@@ -100,15 +100,19 @@ fn main() {
     let run_time = duration_in_millis(run_duration);
 
     let telemetry_start = Instant::now();
-    update_telemetry(&Event {
-        event_name: "hull_timing".to_string(),
-        event_data: CommandRunTime {
-            cmd: cmd.to_string(),
-            args: cmd_args.to_vec(),
-            run: run_time,
-            created_at: get_time().sec,
-            status_code: status_code,
-        }
+    update_telemetry(&EventsPayload {
+        events: vec!(
+            Event {
+                event_name: "hull_timing".to_string(),
+                event_data: CommandRunTime {
+                    cmd: cmd.to_string(),
+                    args: cmd_args.to_vec(),
+                    run: run_time,
+                    created_at: get_time().sec,
+                    status_code: status_code,
+                }
+            },
+        ),
     }).ok();
 
     let telemetry_duration = telemetry_start.elapsed();

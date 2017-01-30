@@ -75,6 +75,9 @@ compact, the performance gains aren't big enough in the grand scheme of things.
 
 Should this change, another payload format could be used in the future.
 
+`hull` returns an `EventsPayload`, which is a `JSON` object containing only one property: `events`.
+In turn, `events` has as values an array of `Event`s.
+
 There are 2 possible `Event` types emitted:
 
 1. `hull_timing`
@@ -88,6 +91,21 @@ There are 2 possible `Event` types emitted:
   event_data: {
     ...
   }
+}
+```
+
+The `EventsPayload` which is emitted by `hull` hence looks like:
+
+```js
+{
+  events: [
+    {
+      event_name: "example",
+      event_data: {
+        ...
+    },
+    ...
+  ]
 }
 ```
 

@@ -17,3 +17,8 @@ struct CommandRunTime {
 struct CurrentTime {
     created_at: i64,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+struct EventsPayload<T> {
+    events: Vec<Event<T>>,
+}
