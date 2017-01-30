@@ -115,14 +115,18 @@ In the case of the `hull_timing` event, `hull` will emit an `Event` with the fol
 
 ```js
 {
-  event_name: "hull_timing",
-  event_data: {
-    cmd: <command name>,
-    args: ["a", "list", "of", "parameters"],
-    run: <time in millis>,
-    created_at: <timestamp in seconds>,
-    status_code: <program exit code>
-  }
+  events: [
+    {
+      event_name: "hull_timing",
+      event_data: {
+        cmd: <command name>,
+        args: ["a", "list", "of", "parameters"],
+        run: <time in millis>,
+        created_at: <timestamp in seconds>,
+        status_code: <program exit code>
+      }
+    }
+  ]
 }
 ```
 
@@ -157,11 +161,11 @@ INFO:hull: cmd: ls run:3.759448 ms telemetry: 0.227966 ms total: 3.963549 ms
 Should one have a server listening, they would receive this data packet (albeit here prettified):
 
 ```js
-{'event_data': {'args': ['-G'],
-                'cmd': 'ls',
-                'created_at': 1485591060,
-                'run': 3.759448,
-                'status_code': 0},
- 'event_name': 'hull_timings'}
+{'events': [{'event_data': {'args': ['-G'],
+                            'cmd': 'ls',
+                            'created_at': 1485755468,
+                            'run': 4.316207,
+                            'status_code': 0},
+             'event_name': 'hull_timing'}]}
 ```
 
