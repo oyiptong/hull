@@ -16,8 +16,7 @@ use hull::cmd::{
     remove_dir_from_path,
     duration_in_millis
 };
-
-include!(concat!(env!("OUT_DIR"), "/serde_types.rs"));
+use hull::types::{EventsPayload, Event, CommandRunTime};
 
 
 fn main() {

@@ -9,8 +9,8 @@ use std::path::{Path, PathBuf};
 use std::io::{self, Write};
 use std::process::exit;
 use std::net::UdpSocket;
+use types::{EventsPayload, Event, CurrentTime};
 
-include!(concat!(env!("OUT_DIR"), "/serde_types.rs"));
 
 pub fn stderr_write(message :String) -> io::Result<()> {
     let stderr = std::io::stderr();

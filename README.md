@@ -173,7 +173,7 @@ Should one have a server listening, they would receive this data packet (albeit 
 
 Requirements are:
 * Mac OS or Linux (BSD's may be supported, but are untested)
-* Rust 1.13.0 or 1.14.0
+* Rust 1.15.0
 
 `rustup` is recommended for compiler management.
 
