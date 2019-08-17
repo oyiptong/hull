@@ -1,43 +1,37 @@
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-extern crate time;
 extern crate hull;
+extern crate time;
 
-use std::env;
-use std::time::Instant;
-use std::process::{exit, Command};
-use time::get_time;
 use hull::cmd::{
-    abort,
-    get_hull_symlinks_root,
+    abort, duration_in_millis, get_hull_symlinks_root, paths_equivalent, remove_dir_from_path,
     update_telemetry,
-    paths_equivalent,
-    remove_dir_from_path,
-    duration_in_millis
 };
-use hull::types::{EventsPayload, Event, CommandRunTime};
-
+use hull::types::{CommandRunTime, Event, EventsPayload};
+use std::env;
+use std::process::{exit, Command};
+use std::time::Instant;
+use time::get_time;
 
 fn main() {
     let now = Instant::now();
-    env_logger::init().unwrap_or_else(|err| {
-        abort(1, format!("Error: {}", err));
-    });
+    env_logger::init();
 
     let args: Vec<String> = env::args().collect();
 
     let ref cmd = args[0];
-    let cmd_args = &args[1 .. args.len()];
+    let cmd_args = &args[1..args.len()];
 
     let symlinks_path = get_hull_symlinks_root();
     if !symlinks_path.exists() {
-        abort(-1, String::from("Error: cannot find hull symlinks directory. Please set HULL_ROOT"));
+        abort(
+            -1,
+            String::from("Error: cannot find hull symlinks directory. Please set HULL_ROOT"),
+        );
     }
 
-    let symlinks_dir = String::from(
-        symlinks_path.to_string_lossy().as_ref()
-    );
+    let symlinks_dir = String::from(symlinks_path.to_string_lossy().as_ref());
 
     // current shell invocation path
     let cur_dir = match env::current_dir() {
@@ -49,12 +43,13 @@ fn main() {
     match paths_equivalent(symlinks_path, cmd.clone(), cur_path) {
         Ok(equivalent) => {
             if equivalent {
-                abort(1,
-                      String::from("Error: unwilling to run program recursively. ")
-                      + "Please check your paths",
+                abort(
+                    1,
+                    String::from("Error: unwilling to run program recursively. ")
+                        + "Please check your paths",
                 );
             };
-        },
+        }
         Err(e) => abort(1, format!("Error: cannot open paths\n{}", e.to_string())),
     };
 
@@ -62,7 +57,10 @@ fn main() {
 
     let path_str = match env::var("PATH") {
         Ok(res) => res,
-        Err(e) => abort(1, format!("Error: cannot get PATH environment variable\n{}", e)),
+        Err(e) => abort(
+            1,
+            format!("Error: cannot get PATH environment variable\n{}", e),
+        ),
     };
 
     // remove symlinks path from PATH so the shell can resolve the next command location
@@ -80,12 +78,9 @@ fn main() {
 
     let status_code = match result {
         // exit for all statuses except expected ones
-
-        Ok(status) => {
-            match status.code() {
-                Some(status_code) => status_code,
-                None => abort(1, format!("{} : unknown error running command", cmd)),
-            }
+        Ok(status) => match status.code() {
+            Some(status_code) => status_code,
+            None => abort(1, format!("{} : unknown error running command", cmd)),
         },
         Err(e) => {
             match e.raw_os_error() {
@@ -100,27 +95,28 @@ fn main() {
 
     let telemetry_start = Instant::now();
     update_telemetry(&EventsPayload {
-        events: vec!(
-            Event {
-                event_name: "hull_timing".to_string(),
-                event_data: CommandRunTime {
-                    cmd: cmd.to_string(),
-                    args: cmd_args.to_vec(),
-                    run: run_time,
-                    created_at: get_time().sec,
-                    status_code: status_code,
-                }
+        events: vec![Event {
+            event_name: "hull_timing".to_string(),
+            event_data: CommandRunTime {
+                cmd: cmd.to_string(),
+                args: cmd_args.to_vec(),
+                run: run_time,
+                created_at: get_time().sec,
+                status_code,
             },
-        ),
-    }).ok();
+        }],
+    })
+    .ok();
 
     let telemetry_duration = telemetry_start.elapsed();
     let telemetry_time = duration_in_millis(telemetry_duration);
 
     let total_time = duration_in_millis(total_duration);
 
-    info!("cmd: {} run:{} ms telemetry: {} ms total: {} ms",
-          cmd, run_time, telemetry_time, total_time);
+    info!(
+        "cmd: {} run:{} ms telemetry: {} ms total: {} ms",
+        cmd, run_time, telemetry_time, total_time
+    );
 
     exit(status_code);
 }
