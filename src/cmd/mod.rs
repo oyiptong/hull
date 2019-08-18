@@ -1,18 +1,17 @@
-extern crate time;
 extern crate serde;
 extern crate serde_json;
+extern crate time;
 
-use std::{self, env};
 use std::error::Error;
-use std::time::Duration;
-use std::path::{Path, PathBuf};
 use std::io::{self, Write};
-use std::process::exit;
 use std::net::UdpSocket;
-use types::{EventsPayload, Event, CurrentTime};
+use std::path::{Path, PathBuf};
+use std::process::exit;
+use std::time::Duration;
+use std::{self, env};
+use types::{CurrentTime, Event, EventsPayload};
 
-
-pub fn stderr_write(message :String) -> io::Result<()> {
+pub fn stderr_write(message: String) -> io::Result<()> {
     let stderr = std::io::stderr();
     let mut handle = stderr.lock();
 
@@ -21,9 +20,9 @@ pub fn stderr_write(message :String) -> io::Result<()> {
     Ok(())
 }
 
-
 pub fn update_telemetry<T>(value: &T) -> Result<(), io::Error>
-    where T: serde::Serialize,
+where
+    T: serde::Serialize,
 {
     let serialized = serde_json::to_string(value).unwrap();
     let payload = serialized.as_bytes();
@@ -32,26 +31,23 @@ pub fn update_telemetry<T>(value: &T) -> Result<(), io::Error>
     Ok(())
 }
 
-
-pub fn abort(exit_code :i32, message :String) -> ! {
+pub fn abort(exit_code: i32, message: String) -> ! {
     update_telemetry(&EventsPayload {
-        events: vec!(
-            Event {
-                event_name: "hull_fatal_error".to_string(),
-                event_data: CurrentTime {
-                    created_at: time::get_time().sec
-                }
-            }
-        ),
-    }).ok();
+        events: vec![Event {
+            event_name: "hull_fatal_error".to_string(),
+            event_data: CurrentTime {
+                created_at: time::get_time().sec,
+            },
+        }],
+    })
+    .ok();
     match stderr_write(message) {
         Ok(_) => exit(exit_code),
         Err(e) => unexpected_io_error(e),
     };
 }
 
-
-pub fn unexpected_io_error(err :std::io::Error) -> ! {
+pub fn unexpected_io_error(err: std::io::Error) -> ! {
     println!("failure: {}", err.description().to_string());
     match err.raw_os_error() {
         Some(code) => exit(code),
@@ -69,17 +65,16 @@ pub fn get_hull_symlinks_root() -> PathBuf {
     match env::var("HULL_ROOT") {
         Ok(res) => {
             path = Some(PathBuf::from(res));
-        },
+        }
         Err(_) => (),
     };
 
     return path.unwrap_or(PathBuf::from("/etc/hull"));
 }
 
-
 /// Returns a shell PATH environment string minus a given directory
-pub fn remove_dir_from_path(dir :String, path_str :String) -> String {
-    let mut child_paths = Vec::new(); 
+pub fn remove_dir_from_path(dir: String, path_str: String) -> String {
+    let mut child_paths = Vec::new();
     for path in path_str.split(":") {
         if path != dir {
             child_paths.push(path);
@@ -88,7 +83,6 @@ pub fn remove_dir_from_path(dir :String, path_str :String) -> String {
 
     return child_paths.join(":");
 }
-
 
 /// Returns whether a command and hull's binary paths are the same
 ///
@@ -99,7 +93,11 @@ pub fn remove_dir_from_path(dir :String, path_str :String) -> String {
 /// # Panics
 ///
 /// Will panic if either `binary_path` or the command path is relative and do not resolve
-pub fn paths_equivalent(binary_path :PathBuf, cur_cmd :String, cur_path :&Path) -> Result<bool, io::Error> {
+pub fn paths_equivalent(
+    binary_path: PathBuf,
+    cur_cmd: String,
+    cur_path: &Path,
+) -> Result<bool, io::Error> {
     let command_path;
 
     if cur_cmd.contains("/") {
@@ -110,9 +108,10 @@ pub fn paths_equivalent(binary_path :PathBuf, cur_cmd :String, cur_path :&Path) 
         command_path = PathBuf::from(cur_cmd);
     }
 
-    debug!("comparing command_path:'{}' binary_path:'{}'",
-            command_path.display(),
-            binary_path.display()
+    debug!(
+        "comparing command_path:'{}' binary_path:'{}'",
+        command_path.display(),
+        binary_path.display()
     );
 
     // still need to canonicalize even if absolute
@@ -122,25 +121,33 @@ pub fn paths_equivalent(binary_path :PathBuf, cur_cmd :String, cur_path :&Path) 
     return Ok(command_path == binary_path);
 }
 
-pub fn duration_in_millis(duration :Duration) -> f64 {
-    return ((duration.as_secs() as f64) * 1_000.0) +
-        ((duration.subsec_nanos() as f64) / 1_000_000.0);
+pub fn duration_in_millis(duration: Duration) -> f64 {
+    return ((duration.as_secs() as f64) * 1_000.0)
+        + ((duration.subsec_nanos() as f64) / 1_000_000.0);
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::env;
     use std::fs::{self, File};
     use std::path::PathBuf;
-    use super::*;
     extern crate tempdir;
     use self::tempdir::TempDir;
 
     macro_rules! t {
-        ($e:expr) => (match $e { Ok(n) => n, Err(e) => panic!("error: {}", e) })
+        ($e:expr) => {
+            match $e {
+                Ok(n) => n,
+                Err(e) => panic!("error: {}", e),
+            }
+        };
     }
 
-    fn in_tmpdir<F>(f: F) where F: FnOnce(&TempDir) {
+    fn in_tmpdir<F>(f: F)
+    where
+        F: FnOnce(&TempDir),
+    {
         let tmpdir = t!(TempDir::new("test"));
         assert!(env::set_current_dir(tmpdir.path()).is_ok());
 
@@ -148,7 +155,7 @@ mod tests {
         t!(tmpdir.close());
     }
 
-    fn ensure_files_created(root :PathBuf, paths :&[PathBuf]) {
+    fn ensure_files_created(root: PathBuf, paths: &[PathBuf]) {
         for path in paths.into_iter() {
             let filename = &root.join(path);
             if path.to_string_lossy().contains("/") {
@@ -156,10 +163,10 @@ mod tests {
                 // could check if directory exists before creating, but `.exists()` does not resolve
                 // relative paths
                 match fs::create_dir_all(parent_dir) {
-                    Ok(_) => {},
+                    Ok(_) => {}
                     Err(_) => {
                         // might get an error in case directory exists. ignore
-                    },
+                    }
                 };
             }
 
@@ -175,7 +182,11 @@ mod tests {
         let inputs = [
             ["/home/user/.bin", "/home/user/.bin:/bin", "/bin"],
             ["/home/user/.bin", "/bin", "/bin"],
-            ["/home/user/.bin", "/home/user/.bin:/bin:/home/user/.bin", "/bin"],
+            [
+                "/home/user/.bin",
+                "/home/user/.bin:/bin:/home/user/.bin",
+                "/bin",
+            ],
             ["/home/user/.bin", "", ""],
             ["", "/bin", "/bin"],
         ];
@@ -199,7 +210,6 @@ mod tests {
         ];
 
         for input in inputs.into_iter() {
-
             in_tmpdir(|tmp_dir| {
                 let binary_path = tmp_dir.path().join(input[0]);
                 let cur_cmd = String::from(input[1]);
@@ -210,10 +220,7 @@ mod tests {
 
                 ensure_files_created(
                     tmp_dir.path().to_path_buf(),
-                    [
-                        binary_path.clone(),
-                        cmd_path,
-                    ].as_ref()
+                    [binary_path.clone(), cmd_path].as_ref(),
                 );
 
                 let expectation = match expected {
