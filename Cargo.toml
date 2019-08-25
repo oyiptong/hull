@@ -4,8 +4,10 @@ name = "hull"
 version = "0.2.0"
 
 [dependencies]
+crossbeam-channel = "0.3"
 env_logger = "0.6"
 log = "0.4"
+nix = "0.15"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
